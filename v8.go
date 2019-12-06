@@ -15,7 +15,7 @@ package v8
 // #include <string.h>
 // #include "v8_c_bridge.h"
 // #cgo CXXFLAGS: -I${SRCDIR} -I${SRCDIR}/include -fno-rtti -fpic -std=c++11
-// #cgo LDFLAGS: -pthread -L${SRCDIR}/libv8 -lv8_base -lv8_init -lv8_initializers -lv8_libbase -lv8_libplatform -lv8_libsampler -lv8_nosnapshot
+// #cgo LDFLAGS: -pthread -L${SRCDIR}/libv8 -lv8_monolith
 import "C"
 
 import (
@@ -95,7 +95,9 @@ func (s PromiseState) String() string {
 }
 
 // Ensure that v8 is initialized exactly once on first use.
-var v8_init_once sync.Once
+func init() {
+	C.v8_init()
+}
 
 // Snapshot contains the stored VM state that can be used to quickly recreate a
 // new VM at that particular state.
@@ -137,7 +139,6 @@ func RestoreSnapshotFromExport(data []byte) *Snapshot {
 // all of the initialization code must be pure JS and supplied at once as the
 // arg to this function.
 func CreateSnapshot(js string) *Snapshot {
-	v8_init_once.Do(func() { C.v8_init() })
 	js_ptr := C.CString(js)
 	defer C.free(unsafe.Pointer(js_ptr))
 	return newSnapshot(C.v8_CreateSnapshotDataBlob(js_ptr))
@@ -153,7 +154,6 @@ type Isolate struct {
 
 // NewIsolate creates a new V8 Isolate.
 func NewIsolate() *Isolate {
-	v8_init_once.Do(func() { C.v8_init() })
 	iso := &Isolate{ptr: C.v8_Isolate_New(C.StartupData{ptr: nil, len: 0})}
 	runtime.SetFinalizer(iso, (*Isolate).release)
 	return iso
@@ -162,7 +162,6 @@ func NewIsolate() *Isolate {
 // NewIsolateWithSnapshot creates a new V8 Isolate using the supplied Snapshot
 // to initialize all Contexts created from this Isolate.
 func NewIsolateWithSnapshot(s *Snapshot) *Isolate {
-	v8_init_once.Do(func() { C.v8_init() })
 	iso := &Isolate{ptr: C.v8_Isolate_New(s.data), s: s}
 	runtime.SetFinalizer(iso, (*Isolate).release)
 	return iso

@@ -11,7 +11,7 @@ FROM ubuntu:16.04 as builder
 # Install the basics we need to compile and install stuff.
 RUN apt-get update -qq \
     && apt-get install -y --no-install-recommends \
-            ca-certificates build-essential pkg-config git curl python \
+            ca-certificates build-essential pkg-config git curl python libxml2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Download the depot_tools and the basic v8 code.

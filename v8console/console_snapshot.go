@@ -8,16 +8,16 @@ import (
 
 const jsConsoleStub = `console = (function() {
     var stored = [];
-    var exception = undefined;
+    var current_exception = undefined;
     function flush(new_console) {
         stored.forEach(function(log) {
             new_console[log.type].apply(new_console, log.args);
         });
-        return exception;
+        return current_exception;
     };
     function catch_exception(e) {
         console.error('Failed to make snapshot:', e);
-        exception = e;
+        current_exception = e;
     };
     return {
         __flush: flush,
